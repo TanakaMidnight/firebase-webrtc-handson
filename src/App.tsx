@@ -21,13 +21,9 @@ function App() {
       navigator.mediaDevices
         .getUserMedia({ video: true, audio: true })
         .then((stream) => {
-          const videoElm = meRef.current;
-          if (videoElm) {
-            console.log("success: getUserMedia()");
-
-            videoElm.srcObject = stream;
-            videoElm.play();
-          }
+          const videoElm = meRef.current as HTMLVideoElement;
+          videoElm.srcObject = stream;
+          videoElm.play();
           setLocalStream(stream);
         })
         .catch((error) => {
@@ -50,13 +46,9 @@ function App() {
 
   const setEventListener = (mediaConnection: MediaConnection) => {
     mediaConnection.on("stream", (stream: MediaStream) => {
-      const videoElm = companionRef.current;
-      if (videoElm) {
-        console.log("success: mediaConnection.stream");
-
-        videoElm.srcObject = stream;
-        videoElm.play();
-      }
+      const videoElm = companionRef.current as HTMLVideoElement;
+      videoElm.srcObject = stream;
+      videoElm.play();
     });
   };
 
