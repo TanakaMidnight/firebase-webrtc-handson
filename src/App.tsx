@@ -16,32 +16,19 @@ function App() {
   const [peerId, setPeerId] = useState<string>("");
   const [companionId, setCompanionId] = useState<string>("");
 
-  useEffect(() => {
-    const getMedia = () => {
-      navigator.mediaDevices
-        .getUserMedia({ video: true, audio: true })
-        .then((stream) => {
-          const videoElm = meRef.current as HTMLVideoElement;
-          videoElm.srcObject = stream;
-          videoElm.play();
-          setLocalStream(stream);
-        })
-        .catch((error) => {
-          console.error("mediaDevice.getUserMedia() error:", error);
-          return;
-        });
-    };
-    getMedia();
-
-    peer.on("open", () => {
-      console.log("open");
-      setPeerId(peer.id);
-    });
-  }, []);
-
-  const handleCall = () => {
-    const mediaConnection = peer.call(companionId, localStream);
-    setEventListener(mediaConnection);
+  const getMedia = () => {
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: true })
+      .then((stream) => {
+        const videoElm = meRef.current as HTMLVideoElement;
+        videoElm.srcObject = stream;
+        videoElm.play();
+        setLocalStream(stream);
+      })
+      .catch((error) => {
+        console.error("mediaDevice.getUserMedia() error:", error);
+        return;
+      });
   };
 
   const setEventListener = (mediaConnection: MediaConnection) => {
@@ -52,31 +39,37 @@ function App() {
     });
   };
 
+  const handleCompanionIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCompanionId(e.target.value);
+  };
+
+  const handleUserNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUserName(e.target.value);
+  };
+
+  const handleCall = () => {
+    const mediaConnection = peer.call(companionId, localStream);
+    setEventListener(mediaConnection);
+  };
+
+  useEffect(() => {
+    getMedia();
+
+    peer.on("open", () => {
+      console.log("open");
+      setPeerId(peer.id);
+    });
+  
+  }, []);
   peer.on("call", (mediaConnection) => {
     mediaConnection.answer(localStream);
     setEventListener(mediaConnection);
   });
 
-  const handleCompanionIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCompanionId(e.target.value);
-  };
-  const handleUserNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUserName(e.target.value);
-  };
-
   return (
     <div className="App">
       <div id="companion">
-        <span>companion</span>
-        <div>
-          <input
-            type="text"
-            value={companionId}
-            onChange={handleCompanionIdChange}
-            placeholder="CompanionId"
-          />
-          <button onClick={handleCall}>接続</button>
-        </div>
+        <span>Companion</span>
         <div>
           <video
             className="video"
@@ -86,9 +79,18 @@ function App() {
             playsInline
           />
         </div>
+        <div>
+          <input
+            type="text"
+            value={companionId}
+            onChange={handleCompanionIdChange}
+            placeholder="CompanionId"
+          />
+          <button onClick={handleCall}>接続</button>
+        </div>
       </div>
       <div id="me">
-        <span>me</span>
+        <span>Me</span>
         <div>
           <video
             className="video"
