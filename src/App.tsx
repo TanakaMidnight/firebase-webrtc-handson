@@ -9,18 +9,18 @@ const peer = new Peer({
 let localStream: MediaStream;
 
 function App() {
-  const myRef = useRef<HTMLVideoElement>(null);
-  const theirRef = useRef<HTMLVideoElement>(null);
-  const [peerId, setPeerId] = useState<string>("");
-  const [theirId, setTheirId] = useState<string>("");
+  const meRef = useRef<HTMLVideoElement>(null);
+  const companionRef = useRef<HTMLVideoElement>(null);
   const [userName, setUserName] = useState<string>("");
+  const [peerId, setPeerId] = useState<string>("");
+  const [companionId, setCompanionId] = useState<string>("");
 
   useEffect(() => {
     const getMedia = () => {
       navigator.mediaDevices
         .getUserMedia({ video: true, audio: true })
         .then((stream) => {
-          const videoElm = myRef.current;
+          const videoElm = meRef.current;
           if (videoElm) {
             console.log("success: getUserMedia()");
 
@@ -43,14 +43,16 @@ function App() {
   }, []);
 
   const handleCall = () => {
-    const mediaConnection = peer.call(theirId, localStream);
+    const mediaConnection = peer.call(companionId, localStream);
     setEventListener(mediaConnection);
   };
 
   const setEventListener = (mediaConnection: MediaConnection) => {
     mediaConnection.on("stream", (stream: MediaStream) => {
-      const videoElm = theirRef.current;
+      const videoElm = companionRef.current;
       if (videoElm) {
+        console.log("success: mediaConnection.stream");
+
         videoElm.srcObject = stream;
         videoElm.play();
       }
@@ -62,8 +64,8 @@ function App() {
     setEventListener(mediaConnection);
   });
 
-  const handleTheirIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTheirId(e.target.value);
+  const handleCompanionIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCompanionId(e.target.value);
   };
   const handleUserNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUserName(e.target.value);
@@ -76,19 +78,18 @@ function App() {
         <div>
           <input
             type="text"
-            value={theirId}
-            onChange={handleTheirIdChange}
-            placeholder="TheirId"
+            value={companionId}
+            onChange={handleCompanionIdChange}
+            placeholder="CompanionId"
           />
           <button onClick={handleCall}>接続</button>
         </div>
         <div>
           <video
             className="video"
-            ref={theirRef}
+            ref={companionRef}
             width="400px"
             autoPlay
-            muted
             playsInline
           />
         </div>
@@ -98,7 +99,7 @@ function App() {
         <div>
           <video
             className="video"
-            ref={myRef}
+            ref={meRef}
             width="400px"
             autoPlay
             muted
