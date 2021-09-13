@@ -6,9 +6,10 @@ const peer = new Peer({
   key: process.env.REACT_APP_SKY_WAY_KEY as string,
   debug: 3,
 });
-let localStream: MediaStream;
 
 function App() {
+  const [localStream, setLocalStream] = useState<MediaStream>();
+
   const meRef = useRef<HTMLVideoElement>(null);
   const companionRef = useRef<HTMLVideoElement>(null);
   const [userName, setUserName] = useState<string>("");
@@ -27,7 +28,7 @@ function App() {
             videoElm.srcObject = stream;
             videoElm.play();
           }
-          localStream = stream;
+          setLocalStream(stream);
         })
         .catch((error) => {
           console.error("mediaDevice.getUserMedia() error:", error);
