@@ -13,6 +13,7 @@ function App() {
   const theirRef = useRef<HTMLVideoElement>(null);
   const [peerId, setPeerId] = useState<string>("");
   const [theirId, setTheirId] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
     const getMedia = () => {
@@ -21,6 +22,8 @@ function App() {
         .then((stream) => {
           const videoElm = myRef.current;
           if (videoElm) {
+            console.log("success: getUserMedia()");
+
             videoElm.srcObject = stream;
             videoElm.play();
           }
@@ -59,17 +62,59 @@ function App() {
     setEventListener(mediaConnection);
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleTheirIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTheirId(e.target.value);
+  };
+  const handleUserNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUserName(e.target.value);
   };
 
   return (
     <div className="App">
-      <video ref={myRef} width="400px" autoPlay muted playsInline></video>
-      <p>{peerId}</p>
-      <textarea value={theirId} onChange={handleChange}></textarea>
-      <button onClick={handleCall}>発信</button>
-      <video ref={theirRef} width="400px" autoPlay muted playsInline></video>
+      <div id="companion">
+        <span>companion</span>
+        <div>
+          <input
+            type="text"
+            value={theirId}
+            onChange={handleTheirIdChange}
+            placeholder="TheirId"
+          />
+          <button onClick={handleCall}>接続</button>
+        </div>
+        <div>
+          <video
+            className="video"
+            ref={theirRef}
+            width="400px"
+            autoPlay
+            muted
+            playsInline
+          />
+        </div>
+      </div>
+      <div id="me">
+        <span>me</span>
+        <div>
+          <video
+            className="video"
+            ref={myRef}
+            width="400px"
+            autoPlay
+            muted
+            playsInline
+          />
+        </div>
+        <div>
+          <input
+            type="text"
+            value={userName}
+            onChange={handleUserNameChange}
+            placeholder="UserName"
+          />
+          <p>{peerId}</p>
+        </div>
+      </div>
     </div>
   );
 }
