@@ -1,21 +1,34 @@
 import "./App.css";
 import Peer, { MediaConnection } from "skyway-js";
 import { useState, useRef, useEffect } from "react";
+import {
+  onSnapshot,
+  collection,
+  addDoc,
+  doc,
+  deleteDoc,
+} from "firebase/firestore";
+import { firebaseDB } from "./Firebase";
 
 const peer = new Peer({
   key: process.env.REACT_APP_SKY_WAY_KEY as string,
   debug: 3,
 });
 
-function App() {
-  const [localStream, setLocalStream] = useState<MediaStream>();
+interface User {
+  id: string;
+  name: string;
+  peerId: string;
+}
 
+let localStream: MediaStream;
+
+function App() {
   const meRef = useRef<HTMLVideoElement>(null);
   const companionRef = useRef<HTMLVideoElement>(null);
-  const [userName, setUserName] = useState<string>("");
+  const [userName, setUserName] = useState<string>("鈴木一郎");
   const [peerId, setPeerId] = useState<string>("");
-  const [companionId, setCompanionId] = useState<string>("");
-
+  const [users, setUsers] = useState<User[]>([]);
   const getMedia = () => {
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
@@ -23,44 +36,68 @@ function App() {
         const videoElm = meRef.current as HTMLVideoElement;
         videoElm.srcObject = stream;
         videoElm.play();
-        setLocalStream(stream);
+        localStream = stream;
       })
       .catch((error) => {
         console.error("mediaDevice.getUserMedia() error:", error);
+        alert(
+          "WebComの接続に失敗しました。WebCamの接続を確認するか、サイトでの利用を「許可」にしてください。"
+        );
         return;
       });
   };
 
   const setEventListener = (mediaConnection: MediaConnection) => {
     mediaConnection.on("stream", (stream: MediaStream) => {
+      console.debug("mediaConnection.on stream");
       const videoElm = companionRef.current as HTMLVideoElement;
       videoElm.srcObject = stream;
       videoElm.play();
     });
   };
 
-  const handleCompanionIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCompanionId(e.target.value);
-  };
-
   const handleUserNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUserName(e.target.value);
   };
 
-  const handleCall = () => {
-    const mediaConnection = peer.call(companionId, localStream);
+  const handleSubscription = () => {
+    addDoc(collection(firebaseDB, "users"), { name: userName, peerId: peerId });
+  };
+
+  const handleCall = (peerId: string) => {
+    const mediaConnection = peer.call(peerId, localStream);
     setEventListener(mediaConnection);
   };
 
+  const handleDelete = (userId: string) => {
+    deleteDoc(doc(firebaseDB, "users", userId));
+  };
+
   useEffect(() => {
+    // WebCam,Mic接続
     getMedia();
 
+    // 自WebRTC接続
     peer.on("open", () => {
-      console.log("open");
       setPeerId(peer.id);
     });
-  
+
+    //Firesotre 購読
+    onSnapshot(collection(firebaseDB, "users"), (querySnapshot) => {
+      const users: User[] = [];
+      querySnapshot.forEach((doc) => {
+        users.push({
+          id: doc.id,
+          name: doc.data().name,
+          peerId: doc.data().peerId,
+        });
+      });
+      setUsers(users);
+      console.debug("Current users: ", users);
+    });
   }, []);
+
+  // 着信処理
   peer.on("call", (mediaConnection) => {
     mediaConnection.answer(localStream);
     setEventListener(mediaConnection);
@@ -69,7 +106,8 @@ function App() {
   return (
     <div className="App">
       <div id="companion">
-        <span>Companion</span>
+        <span>相手</span>
+
         <div>
           <video
             className="video"
@@ -80,17 +118,33 @@ function App() {
           />
         </div>
         <div>
-          <input
-            type="text"
-            value={companionId}
-            onChange={handleCompanionIdChange}
-            placeholder="CompanionId"
-          />
-          <button onClick={handleCall}>接続</button>
+          <table>
+            <thead>
+              <tr>
+                <td>相手の名前</td>
+                <td>操作</td>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((v) => {
+                return (
+                  <tr key={v.id}>
+                    <td>
+                      {v.name}({v.peerId})
+                    </td>
+                    <td>
+                      <button onClick={() => handleCall(v.peerId)}>接続</button>
+                      <button onClick={() => handleDelete(v.id)}>削除</button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
       <div id="me">
-        <span>Me</span>
+        <span>あなた</span>
         <div>
           <video
             className="video"
@@ -102,13 +156,15 @@ function App() {
           />
         </div>
         <div>
+          名前:
           <input
             type="text"
             value={userName}
             onChange={handleUserNameChange}
             placeholder="UserName"
           />
-          <p>{peerId}</p>
+          <button onClick={handleSubscription}>登録</button>
+          <p>自ID:&nbsp{peerId}</p>
         </div>
       </div>
     </div>
