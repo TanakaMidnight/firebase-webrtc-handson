@@ -133,8 +133,14 @@ function App() {
                       {v.name}({v.peerId})
                     </td>
                     <td>
+                      {v.peerId === peerId?
+                      <span>自分</span>
+                      :
+                      <>
                       <button onClick={() => handleCall(v.peerId)}>接続</button>
                       <button onClick={() => handleDelete(v.id)}>削除</button>
+                      </>
+                      }                     
                     </td>
                   </tr>
                 );
